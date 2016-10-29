@@ -143,6 +143,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
         float mTimeYOffset;
         float mDateYOffset;
         float mLineSeparatorYOffset;
+        float mWeatherIconYOffset;
+        float mWeatherYOffset;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -164,6 +166,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mTimeYOffset = resources.getDimension(R.dimen.digital_time_y_offset);
             mDateYOffset = resources.getDimension(R.dimen.digital_date_y_offset);
             mLineSeparatorYOffset = resources.getDimension(R.dimen.digital_line_separator_y_offset);
+            mWeatherIconYOffset = resources.getDimension(R.dimen.digital_weather_icon_y_offset);
+            mWeatherYOffset = resources.getDimension(R.dimen.digital_weather_y_offset);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background));
@@ -176,7 +180,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mMaxTempPaint = createTextPaint(resources.getColor(R.color.primary_text));
             mMinTempPaint = createTextPaint(resources.getColor(R.color.primary_text));
 
-            mWeatherIcon = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher);
+            mWeatherIcon = BitmapFactory.decodeResource(getResources(),R.drawable.art_clear);
             mCalendar = Calendar.getInstance();
             mDate = new Date();
             mDateFormat = new SimpleDateFormat("EEE, MMM d yyyy", Locale.getDefault());
@@ -251,10 +255,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             float dateTextSize = resources.getDimension(isRound
                     ? R.dimen.digital_date_text_size_round : R.dimen.digital_date_text_size);
+            float tempTextSize = resources.getDimension(R.dimen.digital_temp_text_size);
+
             mHourPaint.setTextSize(textSize);
             mMinPaint.setTextSize(textSize);
             mDatePaint.setTextSize(dateTextSize);
             mTextPaint.setTextSize(textSize);
+            mMaxTempPaint.setTextSize(tempTextSize);
+            mMinTempPaint.setTextSize(tempTextSize);
         }
 
         @Override
@@ -276,6 +284,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 mAmbient = inAmbientMode;
                 if (mLowBitAmbient) {
                     mTextPaint.setAntiAlias(!inAmbientMode);
+                    mDatePaint.setAntiAlias(!inAmbientMode);
+                    mHourPaint.setAntiAlias(!inAmbientMode);
+                    mMinPaint.setAntiAlias(!inAmbientMode);
+                    mMaxTempPaint.setAntiAlias(!inAmbientMode);
+                    mMinTempPaint.setAntiAlias(!inAmbientMode);
                 }
                 invalidate();
             }
@@ -343,6 +356,18 @@ public class MyWatchFace extends CanvasWatchFaceService {
             canvas.drawText(dateString, centerX - mDatePaint.measureText(dateString)/2, mDateYOffset, mDatePaint);
 
             canvas.drawLine(bounds.centerX() - 25, mLineSeparatorYOffset, bounds.centerX() + 25, mLineSeparatorYOffset, mDatePaint);
+
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(mWeatherIcon, 40, 40, true);
+            String maxTempString = mMaxTemp + "\u00b0";
+            String minTempString = mMinTemp + "\u00b0";
+            float minTempMeasureText = mMinTempPaint.measureText(minTempString);
+            float maxTempMeasureText = mMaxTempPaint.measureText(maxTempString);
+            float maxTempXPosition = centerX - mMaxTempPaint.measureText(maxTempString) / 2;
+            float minTempXPosition = maxTempXPosition + maxTempMeasureText + 10;
+            float iconXPosition = maxTempXPosition - (resizedBitmap.getWidth() + 10);
+            canvas.drawBitmap(resizedBitmap, iconXPosition, mWeatherIconYOffset, new Paint());
+            canvas.drawText(maxTempString, maxTempXPosition, mWeatherYOffset, mMaxTempPaint);
+            canvas.drawText(minTempString, minTempXPosition, mWeatherYOffset, mMinTempPaint);
         }
 
         /**
