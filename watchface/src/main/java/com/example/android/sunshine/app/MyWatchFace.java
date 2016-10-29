@@ -95,6 +95,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
     Date mDate;
     DateFormat mDateFormat;
 
+    private GoogleApiClient mGoogleApiClient;
+
     @Override
     public Engine onCreateEngine() {
         return new Engine();
@@ -159,6 +161,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            mGoogleApiClient = new GoogleApiClient.Builder(MyWatchFace.this)
+                    .addApi(Wearable.API)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
+            mGoogleApiClient.connect();
+
             setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
@@ -220,6 +229,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 invalidate();
             } else {
                 unregisterReceiver();
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                    mGoogleApiClient.disconnect();
+                }
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -404,6 +416,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onConnected(@Nullable Bundle bundle) {
+            Wearable.DataApi.addListener(mGoogleApiClient, this);
             if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                 Log.d(LOG_TAG,"onConnected");
             }
