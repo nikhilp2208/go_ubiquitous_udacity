@@ -1,4 +1,4 @@
-package com.example.android.watchface;
+package com.example.android.sunshine.app;
 
 import android.graphics.Bitmap;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.watchface;
+package com.example.android.sunshine.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -48,6 +48,7 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
@@ -68,6 +69,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
     private static final Typeface BOLD_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+
+    public final String LOG_TAG = MyWatchFace.class.getSimpleName();
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -247,14 +250,10 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             // Load resources that have alternate values for round watches.
             Resources resources = MyWatchFace.this.getResources();
-            boolean isRound = insets.isRound();
-            mXOffset = resources.getDimension(isRound
-                    ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
-            float textSize = resources.getDimension(isRound
-                    ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
+            mXOffset = resources.getDimension(R.dimen.digital_x_offset);
+            float textSize = resources.getDimension(R.dimen.digital_text_size);
 
-            float dateTextSize = resources.getDimension(isRound
-                    ? R.dimen.digital_date_text_size_round : R.dimen.digital_date_text_size);
+            float dateTextSize = resources.getDimension(R.dimen.digital_date_text_size);
             float tempTextSize = resources.getDimension(R.dimen.digital_temp_text_size);
 
             mHourPaint.setTextSize(textSize);
@@ -360,12 +359,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
             Bitmap resizedBitmap = Bitmap.createScaledBitmap(mWeatherIcon, 40, 40, true);
             String maxTempString = mMaxTemp + "\u00b0";
             String minTempString = mMinTemp + "\u00b0";
-            float minTempMeasureText = mMinTempPaint.measureText(minTempString);
             float maxTempMeasureText = mMaxTempPaint.measureText(maxTempString);
             float maxTempXPosition = centerX - mMaxTempPaint.measureText(maxTempString) / 2;
             float minTempXPosition = maxTempXPosition + maxTempMeasureText + 10;
-            float iconXPosition = maxTempXPosition - (resizedBitmap.getWidth() + 10);
-            canvas.drawBitmap(resizedBitmap, iconXPosition, mWeatherIconYOffset, new Paint());
+            if (!isInAmbientMode()) {
+                float iconXPosition = maxTempXPosition - (resizedBitmap.getWidth() + 10);
+                canvas.drawBitmap(resizedBitmap, iconXPosition, mWeatherIconYOffset, new Paint());
+            }
             canvas.drawText(maxTempString, maxTempXPosition, mWeatherYOffset, mMaxTempPaint);
             canvas.drawText(minTempString, minTempXPosition, mWeatherYOffset, mMinTempPaint);
         }
@@ -404,7 +404,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onConnected(@Nullable Bundle bundle) {
-
+            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
+                Log.d(LOG_TAG,"onConnected");
+            }
         }
 
         @Override
@@ -419,17 +421,24 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
+            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
+                Log.d(LOG_TAG,": received data change");
+            }
             for (DataEvent dataEvent: dataEventBuffer) {
 
                 if(dataEvent.getType() != DataEvent.TYPE_CHANGED) {
                     DataItem dataItem = dataEvent.getDataItem();
                     if(dataItem.getUri().getPath().equals(KEY_PATH)) {
+                        if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
+                            Log.d(LOG_TAG,": received data change..");
+                        }
                         DataMap dataMap = DataMapItem.fromDataItem(dataItem).getDataMap();
                         int weatherId = dataMap.getInt(KEY_WEATHER_ID);
                         mWeatherIcon = BitmapFactory.decodeResource(getResources(),
                                 Utils.getArtResourceForWeatherCondition(weatherId));
                         mMaxTemp = dataMap.getString(KEY_MAX_TEMP);
                         mMinTemp = dataMap.getString(KEY_MIN_TEMP);
+                        invalidate();
                     }
                 }
 
