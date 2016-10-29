@@ -89,8 +89,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
     static final String KEY_MAX_TEMP = "KEY_MAX_TEMP";
 
     private Bitmap mWeatherIcon;
-    private String mMaxTemp = "0";
-    private String mMinTemp = "0";
+    private String mMaxTemp;
+    private String mMinTemp;
 
     Date mDate;
     DateFormat mDateFormat;
@@ -197,6 +197,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mDate = new Date();
             mDateFormat = new SimpleDateFormat("EEE, MMM d yyyy", Locale.getDefault());
             mDateFormat.setCalendar(mCalendar);
+            mMinTemp = getString(R.string.default_temp);
+            mMaxTemp = getString(R.string.default_temp);
         }
 
         @Override
@@ -370,8 +372,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
             canvas.drawLine(bounds.centerX() - 25, mLineSeparatorYOffset, bounds.centerX() + 25, mLineSeparatorYOffset, mDatePaint);
 
             Bitmap resizedBitmap = Bitmap.createScaledBitmap(mWeatherIcon, 40, 40, true);
-            String maxTempString = mMaxTemp + "\u00b0";
-            String minTempString = mMinTemp + "\u00b0";
+            String maxTempString = mMaxTemp;
+            String minTempString = mMinTemp;
             float maxTempMeasureText = mMaxTempPaint.measureText(maxTempString);
             float maxTempXPosition = centerX - mMaxTempPaint.measureText(maxTempString) / 2;
             float minTempXPosition = maxTempXPosition + maxTempMeasureText + 10;
@@ -418,9 +420,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         @Override
         public void onConnected(@Nullable Bundle bundle) {
             Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
-            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                 Log.d(LOG_TAG,"onConnected");
-            }
         }
 
         @Override
@@ -435,23 +435,18 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
-            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
-                Log.d(LOG_TAG,": received data change");
-            }
+            Log.d(LOG_TAG,"received data change");
             for (DataEvent dataEvent: dataEventBuffer) {
-
-                if(dataEvent.getType() != DataEvent.TYPE_CHANGED) {
+                if(dataEvent.getType() == DataEvent.TYPE_CHANGED) {
                     DataItem dataItem = dataEvent.getDataItem();
                     if(dataItem.getUri().getPath().equals(KEY_PATH)) {
-                        if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
-                            Log.d(LOG_TAG,": received data change..");
-                        }
                         DataMap dataMap = DataMapItem.fromDataItem(dataItem).getDataMap();
                         int weatherId = dataMap.getInt(KEY_WEATHER_ID);
                         mWeatherIcon = BitmapFactory.decodeResource(getResources(),
                                 Utils.getArtResourceForWeatherCondition(weatherId));
                         mMaxTemp = dataMap.getString(KEY_MAX_TEMP);
                         mMinTemp = dataMap.getString(KEY_MIN_TEMP);
+                        Log.d(LOG_TAG,"max temp: " + mMaxTemp + ", min temp:" + mMinTemp);
                         invalidate();
                     }
                 }
