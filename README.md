@@ -8,7 +8,8 @@ This app supports both round and square Android watches.
 ## How to run
 * Register in [OpenWeatherMap](https://openweathermap.org/) and get an API key
 * Put your API key in app/build.gradle
-* Build and Run the app on emulator/phone
+* Pair your phone with Android wear emulator/watch by following [these instructions](https://developer.android.com/training/wearables/apps/creating.html)
+* Build and Run the app on your Android phone
 
 ## Screenshots
 
